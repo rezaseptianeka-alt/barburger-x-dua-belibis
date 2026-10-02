@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendaftaran Driver dengan Upload Foto</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .form-container { background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #555; font-weight: bold; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #007BFF; border: none; color: white; font-size: 16px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        button:hover { background-color: #0056b3; }
+        #status-message { text-align: center; margin-top: 15px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>Pendaftaran Driver</h2>
+    <form id="driverForm">
+        <div class="form-group">
+            <label for="nama">Nama Lengkap</label>
+            <input type="text" id="nama" name="nama" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="foto">Upload Foto</label>
+            <!-- Diubah menjadi type="file" dengan filter gambar -->
+            <input type="file" id="foto" name="foto" accept="image/*" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="telepon">Nomor Telepon</label>
+            <input type="tel" id="telepon" name="telepon" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="instagram">Instagram</label>
+            <input type="text" id="instagram" name="instagram" placeholder="@username" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_driver">Nomor ID Driver</label>
+            <input type="text" id="id_driver" name="id_driver" required>
+        </div>
+        
+        <button type="submit" id="submitBtn">Kirim Data</button>
+    </form>
+    <div id="status-message"></div>
+</div>
+
+<script>
+    const scriptURL = 'URL_GOOGLE_APPS_SCRIPT_ANDA_DISINI'; 
+    const form = document.getElementById('driverForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusMessage = document.getElementById('status-message');
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Mengunggah foto & data...';
+        statusMessage.style.color = '#555';
+        statusMessage.textContent = 'Mohon tunggu...';
+
+        const fileInput = document.getElementById('foto');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert('Pilih foto terlebih dahulu!');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Kirim Data';
+            return;
+        }
+
+        // Membaca file gambar menjadi Base64 menggunakan FileReader
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function () {
+            const base64Data = reader.result;
+
+            // Bungkus data form termasuk data base64 foto
+            const formData = new URLSearchParams();
+            formData.append('nama', document.getElementById('nama').value);
+            formData.append('telepon', document.getElementById('telepon').value);
+            formData.append('instagram', document.getElementById('instagram').value);
+            formData.append('id_driver', document.getElementById('id_driver').value);
+            formData.append('fotoNama', file.name);
+            formData.append('fotoData', base64Data);
+
+            fetch(scriptURL, { 
+                method: 'POST', 
+                body: formData 
+            })
+            .then(response => response.json())
+            .then(result => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Kirim Data';
+                statusMessage.style.color = 'green';
+                statusMessage.textContent = 'Berhasil! Foto tersimpan di Drive & data masuk Spreadsheet.';
+                form.reset();
+            })
+            .catch(error => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Kirim Data';
+                statusMessage.style.color = 'red';
+                statusMessage.textContent = 'Terjadi kesalahan, coba lagi.';
+                console.error('Error!', error);
+            });
+        };
+    });
+</script>
+
+</body>
+</html>
